@@ -7,7 +7,7 @@ This repository contains my personal study notes, exercises, and resources for t
 ## 🎯 Exam Information
 
 - **Exam Version**: CKA (Current Version)
-- **Kubernetes Version**: 1.28 (Check the [official documentation](https://docs.linuxfoundation.org/tc-docs/certification/tips-cka-and-ckad) for the version used in your exam)
+- **Kubernetes Version**: (Check the [official documentation](https://docs.linuxfoundation.org/tc-docs/certification/tips-cka-and-ckad) for the version used in your exam)
 - **Duration**: 2 hours
 - **Passing Score**: 66%
 - **Format**: Performance-based (hands-on tasks in a live Kubernetes environment)
@@ -79,11 +79,10 @@ The repository is organized according to the official CKA exam curriculum:
 - Practice setting up contexts and switching between them
 - Bookmark essential pages from Kubernetes documentation
 - Use aliases and shell autocompletion to speed up command typing
-- Check out the [exam-tips](./exam-tips/) directory for more specific advice
 
 ## 🏃‍♂️ Practice Labs
 
-The [practice-labs](./practice-labs/) directory contains hands-on exercises that mirror the types of tasks you might encounter in the exam.
+The [practice-labs](https://killercoda.com/sachin/course/CKA) directory contains hands-on exercises that mirror the types of tasks you might encounter in the exam.
 
 ## 🤝 Contributions
 
