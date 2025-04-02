@@ -40,7 +40,7 @@ The repository is organized according to the official CKA exam curriculum:
    - Persistent Volumes
    - Storage Classes
 
-5. **[Security](./05-security/)** - 12%
+5. **[Security](./security/)** - 12%
 
    - Authentication
    - Authorization
