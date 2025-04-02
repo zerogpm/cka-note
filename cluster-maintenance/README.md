@@ -46,8 +46,8 @@ The repository is organized according to the official CKA exam curriculum:
    - Authorization
    - Certificates
 
-6. **[Cluster Maintenance](./cluster-maintenance/)** - 11%
-Í
+6. **[Cluster Maintenance](./06-cluster-maintenance/)** - 11%
+
    - Cluster Upgrades
    - Backup and Restore
    - Node Maintenance
