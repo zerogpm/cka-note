@@ -111,7 +111,7 @@ Restart the kubelet service to load the updated configuration:
 
 ```bash
 systemctl restart kubelet
-sudo systemctl daemon-reload
+systemctl daemon-reload
 ```
 
 ### 4. Troubleshooting
@@ -131,7 +131,7 @@ mv /temp/*.yaml /etc/kubernetes/manifests/
 
 ```bash
 systemctl restart kubelet
-sudo systemctl daemon-reload
+systemctl daemon-reload
 ```
 
 ## Verification
