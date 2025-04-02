@@ -4,11 +4,13 @@
 
 First, check how many nodes are part of the external ETCD cluster:
 
+You need to ssh into extrnal EC server
+
 ```bash
 ssh etcd-server
 ```
 
-You need to ssh into extrnal EC server
+Then look at the process
 
 ```bash
 ps -ef | grep etcd
