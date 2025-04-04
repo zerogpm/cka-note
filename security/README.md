@@ -1,2 +1,3 @@
 1. **[Basic Authentication](./Basic-Authentication.md)**
-1. **[View Certification](./View-Certification-Details.md)**
+2. **[View Certification](./View-Certification-Details.md)**
+3. **[Certificates API](./Certificates-API.md)**
