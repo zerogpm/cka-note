@@ -1,137 +1,117 @@
-# Kubernetes Dashboard Setup
+# Working with Private Docker Registries in Kubernetes
 
-This guide walks through setting up and troubleshooting a Kubernetes dashboard application.
+This guide demonstrates how to configure Kubernetes to work with private Docker registries.
 
-## Checking Service Accounts
+## Secret Types in Kubernetes
 
-To view existing Service Accounts in the default namespace:
-
-```bash
-kubectl get sa
-```
-
-Output:
-
-```
-NAME     SECRETS   AGE
-default  0         5m16s
-dev      0         35s
-```
-
-## Examining the Default Service Account
-
-To inspect the default service account:
+When creating secrets in Kubernetes, we can choose from several types:
 
 ```bash
-kubectl describe sa default
+k create secret  # Create a secret with specified type
 ```
 
-Output:
+Available secret types:
 
-```
-Name:                default
-Namespace:           default
-Labels:              <none>
-Annotations:         <none>
-Image pull secrets:  <none>
-Mountable secrets:   <none>
-Tokens:              <none>
-Events:              <none>
-```
+- `docker-registry`: For accessing a container registry
+- `generic`: Creates an Opaque secret type
+- `tls`: Holds TLS certificate and its associated key
 
-## Inspecting Dashboard Deployment
-
-View all deployments:
+Available Commands:
 
 ```bash
-kubectl get deploy
+docker-registry  # Create a secret for use with a Docker registry
+generic          # Create a secret from a local file, directory, or literal value
+tls              # Create a TLS secret
 ```
 
-Then inspect the dashboard deployment:
+Command syntax for docker-registry secret:
 
 ```bash
-kubectl describe deploy web-dashboard
+k create secret docker-registry
 ```
 
-Key information:
+## Exploring the Current Deployment
 
-```
-web-dashboard:
-  Image:        gcr.io/kodekloud/customimage/my-kubernetes-dashboard
-  Port:         8080/TCP
-  Host Port:    0/TCP
-  Environment:  PYTHONUNBUFFERED: 1
-```
-
-## Dashboard Status
-
-The current state of the dashboard is: **Failed**
-
-The dashboard application uses a **Service Account** to query the Kubernetes API.
-
-## Examining Dashboard Pod Details
-
-Inspect a dashboard pod to see which service account it's using:
+First, let's examine what image our application is currently using:
 
 ```bash
-kubectl describe pod web-dashboard-5f88cdc488-7rprr
+k describe deploy web
 ```
 
-Service account credentials are mounted at:
+## Updating the Deployment Image
 
-```
-Mounts:
-  /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-qhzc9 (ro)
-```
-
-## Creating a Service Account with Proper Permissions
-
-The default ServiceAccount has limited access. Create a new one:
+We want to use a modified version of the application from an internal private registry located at `myprivateregistry.com:5000`:
 
 ```bash
-kubectl create sa dashboard-sa
+k edit deploy web
 ```
 
-## Creating and Using an Access Token
-
-Generate a token for the new service account:
-
-```bash
-kubectl create token dashboard-sa
-```
-
-Copy the generated token and paste it into the token field of the dashboard UI, then click "Load Dashboard" button.
-
-## Updating Deployment to Use New Service Account
-
-For persistent configuration, update the deployment to use the new service account:
+Update the container image in the deployment:
 
 ```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: web-dashboard
 spec:
-  # ... other configurations
-  template:
-    metadata:
-      # ... other configurations
-    spec:
-      serviceAccountName: dashboard-sa # Update this line
-      # ... other configurations
+  containers:
+    - image: myprivateregistry.com:5000/nginx:alpine
+      imagePullPolicy: IfNotPresent
+      name: nginx
+      resources: {}
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+  dnsPolicy: ClusterFirst
 ```
 
-To apply this change, either:
+## Checking Pod Status
 
-1. Edit the deployment directly:
+After updating the image, we check if the new pods are running successfully:
 
-   ```bash
-   kubectl edit deploy web-dashboard
-   ```
+```bash
+# Command to check pod status (implicit)
+# Result: no
+```
 
-   Find and change `serviceAccountName: default` to `serviceAccountName: dashboard-sa`
+The pods are not running successfully because we need to configure credentials for the private registry.
 
-2. Or apply a patch:
-   ```bash
-   kubectl patch deployment web-dashboard -p '{"spec":{"template":{"spec":{"serviceAccountName":"dashboard-sa"}}}}'
-   ```
+## Creating Registry Credentials Secret
+
+Create a secret with the credentials required to access the private registry:
+
+```bash
+kubectl create secret docker-registry private-reg-cred \
+  --docker-server=myprivateregistry.com:5000 \
+  --docker-username=dock_user \
+  --docker-password=dock_password \
+  --docker-email=dock_user@myprivateregistry.com
+```
+
+Secret details:
+
+- Name: `private-reg-cred`
+- Username: `dock_user`
+- Password: `dock_password`
+- Server: `myprivateregistry.com:5000`
+- Email: `dock_user@myprivateregistry.com`
+
+## Configuring the Deployment to Use the Secret
+
+Update the deployment to use the credentials from the new secret:
+
+```bash
+k edit deploy web
+```
+
+Add the `imagePullSecrets` field to the spec:
+
+```yaml
+spec:
+  imagePullSecrets:
+    - name: private-reg-cred
+  containers:
+    - image: myprivateregistry.com:5000/nginx:alpine
+      imagePullPolicy: IfNotPresent
+      name: nginx
+      resources: {}
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+```
+
+After this configuration, the deployment should be able to successfully pull images from the private registry.
