@@ -34,7 +34,7 @@ The repository is organized according to the official CKA exam curriculum:
    - Service Types
    - Network Policies
 
-4. **[Storage](./04-storage/)** - 7%
+4. **[Storage](./storage/)** - 7%
 
    - Volumes
    - Persistent Volumes
