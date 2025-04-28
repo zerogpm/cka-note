@@ -28,7 +28,7 @@ The repository is organized according to the official CKA exam curriculum:
    - Taints and Tolerations
    - Node Affinity
 
-3. **[Networking](./03-networking/)** - 11%
+3. **[Networking](./networking/)** - 11%
 
    - Cluster Networking
    - Service Types

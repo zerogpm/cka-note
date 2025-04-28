@@ -1,2 +1,2 @@
-1. **[Persisten Volumes And Claims](./persistent-volumes-and-claims.md)**
-2. **[Storage Class](./storage-class.md)**
+1. **[Persisten Volumes And Claims](./Persistent-Volumnes-and-Claims.md)**
+2. **[Storage Class](./Stroage-Class.md)**
