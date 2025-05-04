@@ -1,118 +1,163 @@
-What network range are the nodes in the cluster part of?
+# Kubernetes Networking Analysis
 
-k get nodes -o wide
+This document explains the commands used to investigate the networking configuration of a Kubernetes cluster. We'll explore node networking, pod networking, service ranges, and various components like kube-proxy.
+
+## Table of Contents
+
+- [Node Network Range](#node-network-range)
+- [Pod IP Range](#pod-ip-range)
+- [Service IP Range](#service-ip-range)
+- [Kube-Proxy Configuration](#kube-proxy-configuration)
+- [Common Command Patterns](#common-command-patterns)
+
+## Node Network Range
+
+To determine the network range for nodes in the cluster, we examine both the node information and interface configuration.
 
 ```bash
-NAME           STATUS   ROLES           AGE   VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION   CONTAINER-RUNTIME
-controlplane   Ready    control-plane   26m   v1.32.0   192.6.173.11   <none>        Ubuntu 22.04.5 LTS   5.4.0-1106-gcp   containerd://1.6.26
-node01         Ready    <none>          25m   v1.32.0   192.6.173.3    <none>        Ubuntu 22.04.4 LTS   5.4.0-1106-gcp   containerd://1.6.26
+# Get detailed node information including IP addresses
+kubectl get nodes -o wide
 ```
 
-check for the node ip with the range
+This command shows the INTERNAL-IP and EXTERNAL-IP of each node. In our case, we see:
+
+- controlplane: 192.6.173.11
+- node01: 192.6.173.3
+
+Next, we verify this on the host system:
+
+```bash
+# Show network interfaces
 ip add
+```
 
-you can filter information like this
--A 3 show 3 lines -E is regular expression
+To filter for specific interfaces, we can use:
 
+```bash
+# Filter network interfaces with grep
+# -A 3: show 3 lines after match
+# -E: use extended regex
 ip add | grep -A 3 -E "eth[0-9]+@[0-9a-z]+"
-
-```bash
-1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
-    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
-    inet 127.0.0.1/8 scope host lo
-       valid_lft forever preferred_lft forever
-2: datapath: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1376 qdisc noqueue state UNKNOWN group default qlen 1000
-    link/ether 32:0d:55:79:a1:c3 brd ff:ff:ff:ff:ff:ff
-4: weave: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1376 qdisc noqueue state UP group default qlen 1000
-    link/ether 76:cb:be:0f:a2:ae brd ff:ff:ff:ff:ff:ff
-    inet 10.244.0.1/16 brd 10.244.255.255 scope global weave
-       valid_lft forever preferred_lft forever
-6: vethwe-datapath@vethwe-bridge: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1376 qdisc noqueue master datapath state UP group default
-    link/ether 4e:8b:ee:63:76:51 brd ff:ff:ff:ff:ff:ff
-7: vethwe-bridge@vethwe-datapath: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1376 qdisc noqueue master weave state UP group default
-    link/ether 4a:7b:4f:2b:59:1f brd ff:ff:ff:ff:ff:ff
-8: vxlan-6784: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 65535 qdisc noqueue master datapath state UNKNOWN group default qlen 1000
-    link/ether a2:fa:3f:f6:63:66 brd ff:ff:ff:ff:ff:ff
-10: vethweple404b6c@if9: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1376 qdisc noqueue master weave state UP group default
-    link/ether 72:0e:15:04:b7:78 brd ff:ff:ff:ff:ff:ff link-netns cni-d484a071-56a9-86ea-d31f-47f763c376f6
-12: vethwepl346f68e@if11: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1376 qdisc noqueue master weave state UP group default
-    link/ether aa:ae:7b:e0:ab:5c brd ff:ff:ff:ff:ff:ff link-netns cni-1501776b-407a-18cb-ebbc-026d3c948f5a
-5134: eth0@if5135: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UP group default
-    link/ether 02:42:c0:06:ad:0b brd ff:ff:ff:ff:ff:ff link-netnsid 0
-    inet 192.6.173.11/24 brd 192.6.173.255 scope global eth0
-       valid_lft forever preferred_lft forever
-5138: eth1@if5139: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default
-    link/ether 02:42:ac:19:00:0e brd ff:ff:ff:ff:ff:ff link-netnsid 1
-    inet 172.25.0.14/24 brd 172.25.0.255 scope global eth1
-       valid_lft forever preferred_lft forever
 ```
 
-The answer is that the Kubernetes nodes in this cluster are part of the 192.6.173.0/24 network range. This can be verified through the following commands and their outputs:
+From the output, we can see the network interface has IP 192.6.173.11/24, confirming the nodes are on the 192.6.173.0/24 network.
 
-kubectl get nodes -o wide shows:
+## Pod IP Range
 
-The controlplane node has INTERNAL-IP 192.6.173.11
-The node01 worker has INTERNAL-IP 192.6.173.3
-Both nodes are using IPs from the same 192.6.173.0/24 subnet
+To determine the pod IP range, we need to check the CNI (Container Network Interface) configuration. In this cluster, we're using Weave Net.
 
-ip add confirms:
-
-The eth0 interface has IP 192.6.173.11/24
-This matches the controlplane node's internal IP
-The subnet mask (/24) defines the network range as 192.6.173.0/24
-
-Additional Network Information
-
-Pod Network: 10.244.0.0/16 (implemented via Weave CNI)
-Node Network: 192.6.173.0/24 (for node-to-node communication)
-Additional Network: 172.25.0.0/24 (on eth1 interface)
-
-The commands demonstrate that both Kubernetes nodes have been assigned IP addresses from the 192.6.173.0/24 network range, making this the correct answer for the cluster's node network.
-
-What is the range of IP addresses configured for PODs on this cluster?
+First, let's list all resources to see the networking components:
 
 ```bash
+# List all resources across all namespaces
+kubectl get all -A
+```
 
-k get all -A #<this list all pods in a namespace>
+This shows the running weave-net pods (among other components). We can check the weave logs for the IP allocation range:
 
-NAMESPACE     NAME                                       READY   STATUS    RESTARTS      AGE
-kube-system   pod/coredns-7484cd47db-ndgsn               1/1     Running   0             87m
-kube-system   pod/coredns-7484cd47db-rvkv2               1/1     Running   0             87m
-kube-system   pod/etcd-controlplane                      1/1     Running   0             87m
-kube-system   pod/kube-apiserver-controlplane            1/1     Running   0             87m
-kube-system   pod/kube-controller-manager-controlplane   1/1     Running   0             87m
-kube-system   pod/kube-proxy-ckm84                       1/1     Running   0             86m
-kube-system   pod/kube-proxy-vlzvh                       1/1     Running   0             87m
-kube-system   pod/kube-scheduler-controlplane            1/1     Running   0             87m
-kube-system   pod/weave-net-g9bh2                        2/2     Running   1 (87m ago)   87m
-kube-system   pod/weave-net-mvlrb                        2/2     Running   0             86m
+```bash
+# Check weave logs for ipalloc-range setting
+kubectl logs weave-net-jxcmw -n kube-system | grep -i ipalloc-range
+```
 
-NAMESPACE     NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)                  AGE
-default       service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP                  87m
-kube-system   service/kube-dns     ClusterIP   10.96.0.10   <none>        53/UDP,53/TCP,9153/TCP   87m
+The output confirms the pod IP range is 10.244.0.0/16, which is the CIDR block allocated for pods in this cluster.
 
+## Service IP Range
+
+The service IP range is defined in the kube-apiserver configuration. We can examine this from the apiserver manifest:
+
+```bash
+# View the kube-apiserver configuration
+cat /etc/kubernetes/manifests/kube-apiserver.yaml
+```
+
+Looking at the command arguments, we find the `--service-cluster-ip-range=10.96.0.0/12` parameter, which defines the range of IP addresses assigned to services.
+
+## Kube-Proxy Configuration
+
+### Counting kube-proxy Pods
+
+To count the number of kube-proxy pods:
+
+```bash
+# Count kube-proxy pods
+kubectl get all -A | grep -i pod/kube-proxy | wc -l
+```
+
+This command:
+
+1. Lists all resources across all namespaces
+2. Filters for lines containing "pod/kube-proxy"
+3. Counts the resulting lines
+
+From our output, we have 2 kube-proxy pods running.
+
+### Proxy Mode
+
+To determine the proxy mode used by kube-proxy:
+
+```bash
+# Check kube-proxy logs
+kubectl logs kube-proxy-ndxkk -n kube-system
+```
+
+The logs would show the proxy mode (iptables, ipvs, etc.) configured for kube-proxy.
+
+### Deployment Method
+
+To see how kube-proxy is deployed in the cluster:
+
+```bash
+# Look at the resources
+kubectl get all -A
+```
+
+From the output, we can see kube-proxy is deployed as a DaemonSet:
+
+```
 NAMESPACE     NAME                        DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR            AGE
-kube-system   daemonset.apps/kube-proxy   2         2         2       2            2           kubernetes.io/os=linux   87m
-kube-system   daemonset.apps/weave-net    2         2         2       2            2           <none>                   87m
-
-NAMESPACE     NAME                      READY   UP-TO-DATE   AVAILABLE   AGE
-kube-system   deployment.apps/coredns   2/2     2            2           87m
-
-NAMESPACE     NAME                                 DESIRED   CURRENT   READY   AGE
-kube-system   replicaset.apps/coredns-7484cd47db   2         2         2       87m
+kube-system   daemonset.apps/kube-proxy   2         2         2       2            2           kubernetes.io/os=linux   36m
 ```
 
-check ipalloc-range
+Using a DaemonSet ensures that one kube-proxy pod runs on each node in the cluster (that matches the node selector). The DaemonSet controller automatically deploys a kube-proxy pod to any new node added to the cluster, ensuring network policies and service proxying work on all nodes.
+
+## Common Command Patterns
+
+### Filtering and Counting
+
+To count specific resources:
 
 ```bash
-k logs weave-net-jxcmw -n kube-system | grep -i ipalloc-range:
-
-Defaulted container "weave" out of: weave, weave-npc, weave-init (init)
-INFO: 2025/05/03 22:34:27.076106 Command line options: map[conn-limit:200 datapath:datapath db-prefix:/weavedb/weave-net docker-api: expect-npc:true http-addr:127.0.0.1:6784 ipalloc-init:consensus=1 ipalloc-range:10.244.0.0/16 metrics-addr:0.0.0.0:6782 name:f6:cd:9d:99:24:5e nickname:node01 no-dns:true no-masq-local:true port:6783]
+# Pattern: Get resources | Filter | Count
+kubectl get all -A | grep PATTERN | wc -l
 ```
 
-What is the IP Range configured for the services within the cluster?
+This is useful for:
 
-we might need take a look at kube-apiserver.yaml
+- Counting specific pod types
+- Finding resources matching certain criteria
+- Quick verification of expected object counts
 
-cat
+### Examining Logs
+
+To investigate configurations:
+
+```bash
+# Check logs for specific configurations
+kubectl logs POD_NAME -n NAMESPACE | grep SEARCH_TERM
+```
+
+This helps:
+
+- Find specific configuration settings
+- Troubleshoot issues
+- Verify expected behaviors
+
+### Getting Detailed Resource Information
+
+```bash
+# Get more information with -o wide flag
+kubectl get RESOURCE -o wide
+```
+
+The `-o wide` flag provides additional details without the verbosity of `-o yaml`.
