@@ -16,13 +16,13 @@ This repository contains my personal study notes, exercises, and resources for t
 
 The repository is organized according to the official CKA exam curriculum:
 
-1. **[Core Concepts](./01-core-concepts/)** - 19%
+1. **[Core Concepts](./core-concepts/)** - 19%
 
    - Kubernetes API
    - Pods, Services, and Deployments
    - Namespaces and basic objects
 
-2. **[Scheduling](./02-scheduling/)** - 12%
+2. **[Scheduling](./scheduling/)** - 12%
 
    - Labels, Selectors, and Annotations
    - Taints and Tolerations
@@ -52,7 +52,7 @@ The repository is organized according to the official CKA exam curriculum:
    - Backup and Restore
    - Node Maintenance
 
-7. **[Troubleshooting](./07-troubleshooting/)** - 30%
+7. **[Troubleshooting](./troubleshooting/)** - 30%
    - Application Failures
    - Control Plane Failures
    - Worker Node Failures
