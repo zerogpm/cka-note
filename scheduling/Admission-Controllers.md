@@ -21,7 +21,11 @@ This guide demonstrates how to configure Kubernetes admission controllers, speci
 
 2. **Which admission controller is not enabled by default?**
 
-   - Answer: `NamespaceAutoProvision`
+```bash
+k exec -it kube-apiserver-controlplane -n kube-system -- kube-apiserver -h | grep 'enable-admission-plugins'
+```
+
+- Answer: `NamespaceAutoProvision`
 
 3. **Which admission controller is enabled in this cluster which is normally disabled?**
    - Solution: Use `grep enable-admission-plugins /etc/kubernetes/manifests/kube-apiserver.yaml`
