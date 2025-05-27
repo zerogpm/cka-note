@@ -167,41 +167,6 @@ Instead of deleting a single Pod as requested in the original exercise, the enti
 
 ## Fixing YAML Configuration Files
 
-### First configuration file
-
-**Command:**
-
-```bash
-cat replicaset-definition-1.yaml
-```
-
-**Content:**
-
-```yaml
-apiVersion: apps/v1
-kind: ReplicaSet
-metadata:
-  name: replicaset-1
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      tier: frontend
-  template:
-    metadata:
-      labels:
-        tier: frontend
-    spec:
-      containers:
-        - name: nginx
-          image: nginx
-```
-
-**Explanation:**
-This file was already correct - it uses the proper `apiVersion: apps/v1` for ReplicaSets and has matching labels in the selector and Pod template.
-
-### Second configuration file
-
 **Original content:**
 
 ```yaml
