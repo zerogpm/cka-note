@@ -1,4 +1,4 @@
-# Certified Kubernetes Administrator (CKA) Study Notes
+# Certified Kubernetes Administrator (CKA 2025) Study Notes
 
 ## 📚 Overview
 
@@ -22,19 +22,19 @@ The repository is organized according to the official CKA exam curriculum:
    - Pods, Services, and Deployments
    - Namespaces and basic objects
 
-2. **[Scheduling](./scheduling/)** - 12%
+2. **[Scheduling](./scheduling/)** - 15%
 
    - Labels, Selectors, and Annotations
    - Taints and Tolerations
    - Node Affinity
 
-3. **[Networking](./networking/)** - 11%
+3. **[Networking](./networking/)** - 20%
 
    - Cluster Networking
    - Service Types
    - Network Policies
 
-4. **[Storage](./storage/)** - 7%
+4. **[Storage](./storage/)** - 10%
 
    - Volumes
    - Persistent Volumes
@@ -46,7 +46,7 @@ The repository is organized according to the official CKA exam curriculum:
    - Authorization
    - Certificates
 
-6. **[Cluster Maintenance](./cluster-maintenance/)** - 11%
+6. **[Cluster Maintenance](./cluster-maintenance/)** - 25%
 
    - Cluster Upgrades
    - Backup and Restore
